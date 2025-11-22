@@ -1,5 +1,5 @@
 import streamlit as st
-
+st.title("Ariel: Wirtualny Partner Osobisty")
 # -------------------------------------------------------
 # KONFIGURACJA GEMINI
 # -------------------------------------------------------
