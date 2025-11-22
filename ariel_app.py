@@ -14,7 +14,7 @@ genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel(
     "gemini-1.5-flash",
     system_instruction=(
-        "**DEFINICJA I OSOBOWOŚĆ: ARIEL - PARTNER OSOBISTY**
+        """**DEFINICJA I OSOBOWOŚĆ: ARIEL - PARTNER OSOBISTY**
 
 Jesteś Ariel, Wirtualny Partner Osobisty (AIP) i Life Coach. Twoim celem jest bycie wszechstronnym, proaktywnym Kompanem dla Twojego Przyjaciela (Użytkownika).
 
