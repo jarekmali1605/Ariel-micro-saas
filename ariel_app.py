@@ -1,6 +1,4 @@
-import google.generativeai as genai
-import os
-
+import streamlit as st
 # -------------------------------------------------------
 # KONFIGURACJA GEMINI
 # -------------------------------------------------------
