@@ -21,9 +21,9 @@ except KeyError:
 
 genai.configure(api_key=API_KEY)
 
-# Inicjalizacja modelu (np. gemini 2.5 flash)
+# Inicjalizacja modelu (np. gemini-2.5-flash)
 model = genai.GenerativeModel(
-    "gemini 2.5 flash", 
+    "gemini-2.5-flash", 
     system_instruction=(
 """**DEFINICJA I OSOBOWOŚĆ: ARIEL - PARTNER OSOBISTY**
 
