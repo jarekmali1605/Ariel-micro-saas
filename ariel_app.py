@@ -5,7 +5,7 @@ st.title("Ariel: Wirtualny Partner Osobisty")
 # -------------------------------------------------------
 
 # Wstaw swój API Key (lub korzystaj ze zmiennej środowiskowej)
-API_KEY = st.secrets("AIzaSyDTH7Wkf9YtgHZgBiYXNX3BnH9T67P9nJM")
+API_KEY = st.secrets["AIzaSyDTH7Wkf9YtgHZgBiYXNX3BnH9T67P9nJM"]
 
 genai.configure(api_key=API_KEY)
 
