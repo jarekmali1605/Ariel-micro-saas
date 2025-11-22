@@ -1,11 +1,24 @@
 import streamlit as st
-st.title("Ariel: Wirtualny Partner Osobisty")
+import os
+import google.generativeai as genai
+
 # -------------------------------------------------------
-# KONFIGURACJA GEMINI
+# KONFIGURACJA STRONY I TYTUŁU
+# -------------------------------------------------------
+st.set_page_config(page_title="Ariel: Partner Osobisty", page_icon="✨")
+st.title("Ariel: Wirtualny Partner Osobisty ✨")
+
+# -------------------------------------------------------
+# KONFIGURACJA GEMINI i API KEY
 # -------------------------------------------------------
 
-# Wstaw swój API Key (lub korzystaj ze zmiennej środowiskowej)
-API_KEY = st.secrets["GEMINI_API_KEY"]
+# API_KEY jest pobierany bezpośrednio z panelu Streamlit Secrets
+try:
+    API_KEY = st.secrets["GEMINI_API_KEY"]
+except KeyError:
+    st.error("Błąd: Nie znaleziono klucza GEMINI_API_KEY w Streamlit Secrets. Sprawdź konfigurację!")
+    st.stop()
+
 genai.configure(api_key=API_KEY)
 
 # Inicjalizacja modelu (np. gemini-1.5-flash)
@@ -35,52 +48,37 @@ Zapamiętaj kluczowe elementy tej rozmowy (np. główny cel, aktualny problem, n
     )
 )
 
-# Tworzymy sesję czatu z historią, jak w React
-chat_session = model.start_chat(history=[
-    {
-        "role": "model",
-        "parts": ["Cześć! Jestem Ariel, Twoja osobista asystentka. W czym mogę Ci dzisiaj pomóc?"]
-    }
-])
-
 # -------------------------------------------------------
-# FUNKCJA WYSYŁANIA WIADOMOŚCI (odpowiednik handleSendMessage)
+# LOGIKA STREAMLIT I SESJI CZATU
 # -------------------------------------------------------
 
-def send_message_to_gemini(user_message: str) -> str:
-    """
-    Wysyła wiadomość użytkownika do chatbota
-    i zwraca odpowiedź modelu.
-    Cała logika bazuje na tym, co robiło React + Gemini.
-    """
-    if not user_message.strip():
-        return ""
+# Używamy st.session_state do zarządzania historią czatu
+if "chat_session" not in st.session_state:
+    st.session_state.chat_session = model.start_chat(history=[
+        {
+            "role": "model",
+            "parts": ["Cześć! Jestem Ariel, Twoja osobista asystentka. W czym mogę Ci dzisiaj pomóc?"]
+        }
+    ])
 
-    try:
-        response = chat_session.send_message(user_message)
-        return response.text
-    except Exception as e:
-        print("Błąd podczas komunikacji z Gemini:", e)
-        return "Przepraszam, mam problem z połączeniem. Spróbuj ponownie za chwilę."
+# Wyświetlanie historii czatu (wszystkie poprzednie wiadomości)
+for message in st.session_state.chat_session.history:
+    role = "user" if message.role == "user" else "assistant"
+    with st.chat_message(role):
+        st.markdown(message.parts[0].text)
 
-# -------------------------------------------------------
-# PROSTA APLIKACJA TEKSTOWA (CLI)
-# -------------------------------------------------------
+# Obsługa nowego wejścia od użytkownika
+if prompt := st.chat_input("Napisz do Ariel..."):
+    # 1. Dodanie wiadomości użytkownika do historii i wyświetlenie jej
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-def main():
-    # Wyświetlamy pierwszą wiadomość tak jak w frontendzie
-    print("Ariel: Cześć! Jestem Ariel, Twoja osobista asystentka. W czym mogę Ci dzisiaj pomóc?")
-
-    while True:
-        user_input = input("Ty: ").strip()
-        if user_input.lower() in ["exit", "quit", "wyjdz", "wyjdź"]:
-            print("Ariel: Miłego dnia! Do zobaczenia.")
-            break
-
-        response = send_message_to_gemini(user_input)
-        print("Ariel:", response)
-
-
-if __name__ == "__main__":
-    main()
-
+    # 2. Wysłanie wiadomości do modelu i otrzymanie odpowiedzi
+    with st.chat_message("assistant"):
+        try:
+            # Wysłanie wiadomości i pobranie odpowiedzi
+            response = st.session_state.chat_session.send_message(prompt)
+            st.markdown(response.text)
+        except Exception as e:
+            st.error(f"Błąd komunikacji z modelem: {e}")
+            st.stop()
