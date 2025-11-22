@@ -6,7 +6,7 @@ import os
 # -------------------------------------------------------
 
 # Wstaw swój API Key (lub korzystaj ze zmiennej środowiskowej)
-API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyDTH7Wkf9YtgHZgBiYXNX3BnH9T67P9nJM")
+API_KEY = os.getenv("AIzaSyDTH7Wkf9YtgHZgBiYXNX3BnH9T67P9nJM")
 
 genai.configure(api_key=API_KEY)
 
