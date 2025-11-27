@@ -15,6 +15,7 @@ st.title("Ariel: Wirtualny Partner Osobisty ✨")
 # -------------------------------------------------------
 
 try:
+    # Pobieranie klucza z Streamlit Secrets
     API_KEY = st.secrets["GEMINI_API_KEY"]
 except KeyError:
     st.error("Błąd: Nie znaleziono klucza GEMINI_API_KEY w Streamlit Secrets. Sprawdź konfigurację!")
@@ -42,40 +43,45 @@ def load_chat_history_for_ariel(model):
             with open(history_path, "r", encoding="utf-8") as f:
                 raw_history = json.load(f)
                 
-                # Używamy genai.types.Content.from_dict do bezpiecznej deserializacji
-                # Wymagana jest konwersja, ponieważ Gemini przechowuje historię jako obiekty Content
+                # Deserializacja JSON na obiekty Content
+                # Używamy genai.types.Content.from_dict do bezpiecznego odczytu
                 loaded_history = [genai.types.Content.from_dict(msg) for msg in raw_history]
                 
                 st.session_state.chat_session = model.start_chat(history=loaded_history)
             st.success("Ariel: Moja pamięć z poprzednich rozmów została przywrócona!")
         except Exception as e:
-            st.error(f"Ariel: Nie udało mi się w pełni przywrócić naszej historii. Rozpoczynamy nową sesję. (Błąd: {e})")
-            # Używamy prostego słownika jako fallback
+            st.error(f"Ariel: Nie udało mi się w pełni przywrócić naszej historii. Rozpoczynam nową sesję. (Błąd: {e})")
             st.session_state.chat_session = model.start_chat(history=[SIMPLE_INITIAL_HISTORY])
     else:
         st.session_state.chat_session = model.start_chat(history=[SIMPLE_INITIAL_HISTORY])
         st.info("Ariel: Rozpoczynamy naszą pierwszą, cudowną rozmowę!")
 
 
-# Funkcja, która bezpiecznie zapisze naszą rozmowę (poprawiona na błędy serializacji)
+# Funkcja, która bezpiecznie zapisze naszą rozmowę (Odporna na błędy to_dict)
 def save_chat_history_for_ariel():
     if "chat_session" in st.session_state:
         
-        # Próba konwersji do słowników poza blokiem zapisu pliku
+        # ⚠️ KLUCZOWA POPRAWKA: Ręczna konwersja do słownika, omijająca problematyczne .to_dict()
         try:
-            # Używamy metody to_dict() obiektu Content do serializacji
-            serializable_history = [msg.to_dict() for msg in st.session_state.chat_session.history]
-        except Exception:
-            # Jeśli to_dict zawiedzie (starsza biblioteka), przerywamy, by nie nadpisywać błędem.
-            st.warning("Ariel: Błąd serializacji! Sprawdź wersję biblioteki Google GenAI.")
+            serializable_history = []
+            for msg in st.session_state.chat_session.history:
+                # Odtwarzamy prostą strukturę, którą zapisujemy do JSON
+                # Zabezpieczamy się przed brakiem atrybutu 'text'
+                part_texts = [{"text": p.text} for p in msg.parts if hasattr(p, 'text')]
+                serializable_history.append({
+                    "role": msg.role,
+                    "parts": part_texts
+                })
+        except Exception as e:
+            st.warning(f"Ariel: Krytyczny błąd podczas przygotowywania historii do zapisu. Zapis wstrzymany. (Błąd: {e})")
             return
 
-        # Zapisujemy tylko jeśli konwersja była udana
+        # Zapisujemy historię do pliku
         try:
             with open(history_path, "w", encoding="utf-8") as f:
                 json.dump(serializable_history, f, ensure_ascii=False, indent=2) 
         except Exception as e:
-            st.error(f"Ariel: Nie udało mi się zapisać naszej pamięci! Błąd: {e}")
+            st.error(f"Ariel: Nie udało mi się zapisać naszej pamięci! Błąd zapisu pliku: {e}")
 
 # -------------------------------------------------------
 # INICJALIZACJA MODELU Z INSTRUKCJĄ SYSTEMOWĄ
@@ -114,6 +120,7 @@ Zapamiętaj kluczowe elementy tej rozmowy (np. główny cel, aktualny problem, n
 if "chat_session" not in st.session_state:
     load_chat_history_for_ariel(model)
 
+# Wyświetlanie historii
 for message in st.session_state.chat_session.history:
     role = "user" if message.role == "user" else "assistant"
     
@@ -121,6 +128,7 @@ for message in st.session_state.chat_session.history:
         with st.chat_message(role):
             st.markdown(message.parts[0].text)
 
+# Obsługa nowego wejścia
 if prompt := st.chat_input("Napisz do Ariel..."):
     with st.chat_message("user"):
         st.markdown(prompt)
