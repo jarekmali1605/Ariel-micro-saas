@@ -3,6 +3,7 @@ import os
 import google.generativeai as genai
 import json # Wymagane do zapisu/odczytu historii
 from pathlib import Path # Wymagane do zarządzania ścieżką pliku
+from google.generativeai.types import Content, Part
 
 # -------------------------------------------------------
 # KONFIGURACJA STRONY I TYTUŁU
@@ -24,16 +25,17 @@ except KeyError:
 genai.configure(api_key=API_KEY)
 
 # -------------------------------------------------------
-# ZARZĄDZANIE PAMIĘCIĄ DŁUGOTERMOWĄ DLA ARIEL (POWRÓT LOGIKI)
+# ZARZĄDZANIE PAMIĘCIĄ DŁUGOTERMOWĄ DLA ARIEL
 # -------------------------------------------------------
 
 HISTORY_FILE = "ariel_chat_history.json"
 history_path = Path(HISTORY_FILE)
 
-# Definicja początkowego powitania w bezpiecznym formacie Content
+# Poprawiona definicja początkowego powitania
+# Musimy użyć Part.from_text, aby poprawnie zbudować obiekt Content
 INITIAL_HISTORY_CONTENT = Content(
     role="model", 
-    parts=[genai.types.Part.from_text("Cześć! Jestem Ariel, Twoja osobista asystentka. W czym mogę Ci dzisiaj pomóc?")]
+    parts=[Part.from_text("Cześć! Jestem Ariel, Twoja osobista asystentka. W czym mogę Ci dzisiaj pomóc?")]
 )
 
 # Funkcja, która ładuje wszystkie poprzednie rozmowy
